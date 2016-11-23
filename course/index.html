@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Open Up</title>
+
+		<meta name="description" content="Open Up : Lesson 3 LDAP servers">
+		<meta name="author" content="Tellier Benoit">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+	
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+
+<section>
+<h1>Open-up</h1>
+
+<h2>Course 7 : FileSystems</h2>
+
+<img data-src="large.png">
+
+<p>Speaker : <a>Benoit Tellier</a></p>
+
+</section>
+
+
+
+
+
+
+
+
+
+<section>
+<h2>Why this presentation ?</h2>
+
+<ul>
+<li>Manage disk partitions</li>
+<li>Managing file systems</li>
+<li>Links</li>
+</ul>
+</section>
+
+<!--
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+-->
+
+<section>
+
+  <section><h1>Managing disk partitions</h1></section>
+
+  <section>
+    <h2>Disk partitions</h2>
+    <ul>
+      <li>Pretend you have several disks</li>
+      <li>Benefit : separate OS</li>
+      <li>Benefit : you might need several filesystem for the same computer</li>
+      <li>Benefit : better isolation</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Disk partitions types</h2>
+    <ul>
+      <li>Primary</li>
+      <li>Extended</li>
+      <li>Logical</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>fdisk</h2>
+    <ul>
+      <li>Allow you to edit partitions</li>
+      <li>Works well for traditional BIOS</li>
+      <li>Use carefully and on inactive disk</li>
+      <li>NB 83 for future Linux partitions</li>
+    </ul>
+  </section>
+
+  <section>
+    <pre><code>$ fdisk -l /dev/sda
+Disk /dev/sda: 8589 MB, 8589934592 bytes
+255 heads, 63 sectors/track, 1044 cylinders, total 16777216 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x000e4508
+
+Périphérique      Début        Fin   Secteurs Taille Type
+/dev/sda1          2048  419432447  419430400   200G Espace de stockage Microsoft
+/dev/sda2     419432448  629147647  209715200   100G Système de fichiers Linux
+/dev/sda3     629147648 1887438847 1258291200   600G Données personnelles Linux
+/dev/sda4    1887438848 1953525134   66086287  31,5G Partition d'échange Lin
+</code></pre>
+  </section>
+
+  <section>
+    <pre><code># fdisk /dev/sda
+
+Bienvenue dans fdisk (util-linux 2.28.2).
+Les modifications resteront en mémoire jusqu'à écriture.
+Soyez prudent avant d'utiliser la commande d'écriture.
+
+
+Commande (m pour l'aide): m
+</code></pre> 
+  </section>
+
+  <section>
+    <h2>GPT</h2>
+    <ul>
+      <li>Manage partition table</li>
+      <li>Part of UEFI standard</li>
+      <li>No historical limitations from BIOS</li>
+      <li>Again use carefully!!!</li>
+    </ul>
+  </section>
+
+  <section>
+    <pre><code>root@horizon /mnt # gdisk -l /dev/sda
+GPT fdisk (gdisk) version 1.0.1
+
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+
+Found valid GPT with protective MBR; using GPT.
+Disk /dev/sda: 1953525168 sectors, 931.5 GiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): EE3BEC27-1813-42E5-9C3D-EDBD424AF3C4
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 1953525134
+Partitions will be aligned on 2048-sector boundaries
+Total free space is 2014 sectors (1007.0 KiB)
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048       419432447   200.0 GiB   4202  Windows Storage Spaces
+   2       419432448       629147647   100.0 GiB   8300  Linux filesystem
+   3       629147648      1887438847   600.0 GiB   8302  Linux /home
+   4      1887438848      1953525134   31.5 GiB    8200  Linux swap
+</code></pre>
+  </section>
+
+  <section>
+    <pre><code>root@horizon /mnt # gdisk /dev/sdb  
+GPT fdisk (gdisk) version 1.0.1
+
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+
+Found valid GPT with protective MBR; using GPT.
+
+Command (? for help):
+</code></pre>
+  </section>
+
+  <section>
+    <h2>Parted</h2>
+    <ul>
+      <li>Manage partition table again (!!!)</li>
+      <li>UEFI and standard BIOS</li>
+      <li>Again use carefully!!!</li>
+    </ul>
+  </section>
+
+  <section>
+    <pre><code>root@horizon /mnt # parted /dev/sda -l
+Modèle: ATA KINGSTON SMSM151 (scsi)
+Disque /dev/sdb : 128GB
+Taille des secteurs (logiques/physiques): 512B/512B
+Table de partitions : gpt
+Disk Flags: 
+
+Numéro  Début   Fin     Taille  Système de fichiers  Nom                           Fanions
+ 1      1049kB  106MB   105MB   fat32                EFI system partition          démarrage, esp
+ 2      106MB   240MB   134MB                        Microsoft reserved partition  msftres
+ 3      240MB   57,4GB  57,2GB  ntfs                 Basic data partition          msftdata
+ 5      57,4GB  57,9GB  524MB   fat32                EFI System                    démarrage, esp
+ 6      57,9GB  112GB   54,0GB  ext4                 Linux x86-64 root (/)
+ 4      112GB   128GB   16,1GB  ntfs                 Basic data partition          caché, diag
+
+</code></pre>
+  </section>
+
+  <section>
+    <pre><code>root@horizon /mnt # parted /dev/sda   
+GNU Parted 3.2
+Utilisation de /dev/sda
+Bievenue sur GNU Parted ! Tapez 'help' pour voir la liste des commandes.
+(parted)
+</code></pre>
+  </section>
+
+  <section>
+    <pre><code>Commande (m pour l'aide): n
+Type de partition
+   p   primaire 
+   e   étendue 
+Sélectionnez (p par défaut): p
+Numéro de partition (1-4, default 1): 
+Premier secteur (2048-524287, default 2048): 
+Dernier secteur, +secteurs ou +taille{K,M,G,T,P} (2048-524287, default 524287): +128M
+
+Une nouvelle partition 1 de type Linux et de taille 128 MiB a été créée.
+</code></pre>
+  </section>
+
+  <section>
+    <pre><code>Commande (m pour l'aide): n
+Type de partition
+   p   primaire 
+   e   étendue
+Sélectionnez (p par défaut): p
+Numéro de partition (2-4, default 2): 2
+Premier secteur (264192-524287, default 264192): 
+Dernier secteur, +secteurs ou +taille{K,M,G,T,P} (264192-524287, default 524287): 
+
+Une nouvelle partition 2 de type Linux et de taille 127 MiB a été créée.
+
+Commande (m pour l'aide): w
+La table de partitions a été altérée.
+</code></pre>
+  </section>
+
+<!--
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+-->
+
+<section>
+    <h2>What is a file system ?</h2>
+    <ul>
+      <li>Offer file operations (read, write, metadata, etc...) and directories</li>
+      <li>Any kind of backend : Block devices, network, other file systems...</li>
+      <li>Put together by Linux Virtual File System (VFS)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>A small list of fyle systems</h2>
+    <ul>
+      <li>ext 2 : Developped by a french : Rémy Card</li>
+      <li>ext 3 : Adds journalisation to ext 2</li>
+      <li>ext 4 : compatible with ext3 and adds functionnalities (larger, less fragmentation, pre-allocation, delayed allocation, etc...)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>A small list of fyle systems</h2>
+    <ul>
+      <li>XFS : Developped by SGI. Journalised and performant</li>
+      <li>VFAT : virtual file allocation table. Introduced by windows.</li>
+      <li>ReiserFS : Older journalised file system for Linux. Adapted to many small files.</li>
+      <li>AUFS : Another union File System</li>
+    </ul>
+  </section>
+
+
+  <section>
+    <pre><code>
+mkfs -t ext3 /dev/sdb1
+mkfs -t ext4 /dev/sdb1
+mkfs -t xfs /dev/sdb1
+mkfs -t reiserfs /dev/sdb1
+mkfs -t vfat /dev/sdb1
+</code></pre>
+  </section>
+
+  <section>
+    <pre><code>
+mkswap /dev/sdb2
+
+dd if=/dev/zero of=swapfile bs=1024 count=65536
+mkswap swapfile
+</code></pre>
+  </section>
+
+  <section>
+    <h2>fsck</h2>
+    <ul>
+      <li>file system check</li>
+      <li>The filesystem under check should not be mounted</li>
+      <li>Non referenced files found are mover to lost+found</li>
+      <li>Only a front, that lauch the right commad for the filesystem type</li>
+    </ul>
+  </section>
+
+  <section>
+    <pre><code>$ fsck
+$ fsck /dev/sdb1
+$ fsck UUID=3e6be9de-8139-11d1-9106-a43f08d823a6
+$ fsck LABEL=home
+
+# Accept automatically proposed corrections
+$ fsck -y
+
+# Froce fsck
+$ fsck -f
+</code></pre>
+  </section>
+
+  <section>
+    <pre><code>root@horizon ~ # dumpe2fs -h /dev/mapper/loop9p2       
+dumpe2fs 1.43.3 (04-Sep-2016)
+Filesystem volume name:   <none>
+Last mounted on:          <not available>
+Filesystem UUID:          8b4e982b-db91-4772-9352-54394296f72d
+Filesystem magic number:  0xEF53
+Filesystem revision #:    1 (dynamic)
+</code></pre>
+  </section>
+
+  <section>
+    <h2>tune2fs</h2>
+    <ul>
+      <li>Tune ext file systems</li>
+      <li>-j create journal</li>
+      <li>-l print super blocks content</li>
+      <li>-L labels -U UUID</li>
+    </ul>
+  </section>
+
+
+
+  <section>
+    <pre><code>root@horizon /mnt # df -h -i
+Sys. de fichiers In-uds IUtil. ILibre IUti% Monté sur
+dev                2,0M    536   2,0M    1% /dev
+run                2,0M    888   2,0M    1% /run
+/dev/sdb6          3,2M   486K   2,7M   16% /
+tmpfs              2,0M     53   2,0M    1% /dev/shm
+tmpfs              2,0M     12   2,0M    1% /sys/fs/cgroup
+/dev/sdb1             0      0      0     - /boot
+tmpfs              2,0M    142   2,0M    1% /tmp
+/dev/sda3           38M   1,4M    37M    4% /home
+/dev/sda2          6,3M    21K   6,3M    1% /var
+tmpfs              2,0M     19   2,0M    1% /run/user/120
+tmpfs              2,0M    224   2,0M    1% /run/user/1000
+</code></pre>
+  </section>
+
+
+  <section>
+    <pre><code>root@horizon /home/benwa/Music # du -h -d 1
+5,8M	./Sexion D'assaut
+2,1M	./Kid cudi
+596M	./Rammstein
+606M	./D'espairsRay
+7,0M	./Angelic Upstarts
+130M	./Fela Ransome-Kuti And Africa 70
+4,7M	./modjo
+43M	./Simple Minds
+</code></pre>
+  </section>
+
+
+  <section>
+    <pre><code>$ mount -t iso9660 -o ro /dev/sr0 /mnt
+
+• Mounting a file, as read only
+$ mount -t iso9660 -o loop,ro image.iso /mnt
+
+• Mounting according to /etc/fstab :
+$ mount /opt
+
+• Mount all file systems as specified in fstab :
+/etc/fstab :
+$ mount -a
+
+$ umount /mnt
+</code></pre>
+  </section>
+
+  <section>
+    <pre><code># UUID=2fd76f47-41a7-4034-9ab0-409c3eb9f71d
+/dev/sdb6           	/         	ext4      	rw,relatime,data=ordered	0 1
+
+# UUID=3A30-1F94 LABEL=SYSTEM
+/dev/sdb1           	/boot     	vfat      	rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro	0 2
+
+# UUID=5513c310-2ca7-4dfa-a09c-b96d76f5118d
+/dev/sda2           	/var      	ext4      	rw,relatime,data=ordered	0 2
+
+# UUID=6feb94f5-aa1f-481e-bf41-ab8672b27fb1
+/dev/sda3           	/home     	ext4      	rw,relatime,data=ordered	0 2
+</code></pre>
+  </section>
+
+
+  <section>
+    <h2>Mounting as non priviledged user</h2>
+    <ul>
+      <li>user option in fstab</li>
+      <li>0 for checks</li>
+      <li>Conventionnal mount point in /media</li>
+    </ul>
+  </section>
+
+</section>
+
+
+<!--
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+-->
+
+<section>
+
+  <section>
+    <h2>How does a LiNUX filesystem looks like ?</h2>
+    <ul>
+      <li>A file : several names, one inode, content</li>
+      <li>Directory : one inode, associations from name to inode</li>
+      <li>Such an association is called "link"</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Hard links</h2>
+    <ul>
+      <li>Make a name point to the inode of an other file</li>
+      <li>ln link_target link_name</li>
+      <li>You must be the owner</li>
+      <li>On the same file system</li>
+      <li>Do not apply for directory</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Hard links</h2>
+<img data-src="hard.png">
+  </section>
+
+  <section>
+    <h2>Soft links</h2>
+    <ul>
+      <li>Make a name point to another name</li>
+      <li>ln -s link_target link_name</li>
+      <li>No need to be the owner</li>
+      <li>Accross file system</li>
+      <li>Apply for directory</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Soft links</h2>
+<img data-src="soft.png">
+  </section>
+
+</section>
+
+
+<!--
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+=============================================
+-->
+
+
+<section>
+	<h1>Questions ?</h1>
+</section>
+
+
+
+
+
+
+
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				slideNumber: true,
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+                                
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
